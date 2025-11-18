@@ -1,0 +1,79 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    tags:
+      - "*"  # 当推送 Git 标签时触发
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 检出代码
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+
+      # 设置 Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # 获取仓库名称、Git 标签等信息
+      - name: Get repository details
+        id: version
+        run: |
+          VERSION=$(git describe --tags --always)
+          FULL_REPO_NAME=${GITHUB_REPOSITORY}  # 例如：username/repo_name
+          USER_NAME=$(echo $FULL_REPO_NAME | cut -d'/' -f1)  # 提取 user_name
+          REPO_NAME=$(echo $FULL_REPO_NAME | cut -d'/' -f2)  # 提取 repo_name
+          REPO_NAME=$(echo $REPO_NAME | tr '[:upper:]' '[:lower:]')  # 转换为小写
+          echo "Repository: $REPO_NAME, Version: $VERSION, User: $USER_NAME,FULL_REPO_NAME:$FULL_REPO_NAME"
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_OUTPUT
+          echo "USER_NAME=$USER_NAME" >> $GITHUB_OUTPUT
+
+      # 构建 Docker 镜像
+      - name: Build Docker image
+        run: |
+          # 读取 $GITHUB_OUTPUT 文件中的值
+          source $GITHUB_OUTPUT
+          
+          IMAGE_NAME="${USER_NAME}/${REPO_NAME}:${VERSION}"
+          
+          echo "Docker image $IMAGE_NAME built successfully."
+
+  push_docker:
+    needs: build  # 依赖于构建步骤完成后执行
+    runs-on: ubuntu-latest
+
+    steps:
+      # 检出代码
+      - name: Checkout code
+        uses: actions/checkout@v2
+        
+      # 登录 Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          
+      # 获取仓库名称、Git 标签等信息
+      - name: Get repository details
+        run: |
+          # 读取 $GITHUB_OUTPUT 文件中的值
+          source $GITHUB_OUTPUT
+          echo "Using repository: $USER_NAME/$REPO_NAME:$VERSION"
+
+      # 推送 Docker 镜像
+      - name: Push Docker image
+        run: |
+          # 读取 $GITHUB_OUTPUT 文件中的值
+          source $GITHUB_OUTPUT
+
+          IMAGE_NAME="${USER_NAME}/${REPO_NAME}:${VERSION}"
+          LATEST_IMAGE_NAME="${USER_NAME}/${REPO_NAME}:latest"  # 定义 latest 标签
+          docker push $IMAGE_NAME
+          docker push $LATEST_IMAGE_NAME  # 推送 latest 标签
+          echo "Docker image $IMAGE_NAME pushed successfully."
