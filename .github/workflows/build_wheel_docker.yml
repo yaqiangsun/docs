@@ -23,10 +23,10 @@ jobs:
       - name: Get repository details
         id: version
         run: |
-          echo "repository=${{ github.repository }}" >> $GITHUB_OUTPUT
-          echo "repo_name=${{ github.repository_name }}" >> $GITHUB_OUTPUT   # 就是 repo_name
-          echo "owner=${{ github.repository_owner }}" >> $GITHUB_OUTPUT     # 就是用户名或组织名
-          echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT           # tag 推送时就是 tag 名
+          echo "repository=${{ github.repository }}"
+          echo "repo_name=${{ github.repository_name }}"   # 就是 repo_name
+          echo "owner=${{ github.repository_owner }}"     # 就是用户名或组织名
+          echo "version=${{ github.ref_name }}"           # tag 推送时就是 tag 名
           VERSION=$(git describe --tags --always)
           FULL_REPO_NAME=${GITHUB_REPOSITORY}  # 例如：username/repo_name
           USER_NAME=$(echo $FULL_REPO_NAME | cut -d'/' -f1)  # 提取 user_name
