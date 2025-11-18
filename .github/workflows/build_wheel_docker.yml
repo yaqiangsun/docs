@@ -20,9 +20,11 @@ jobs:
         id: meta
         run: |
           # 方法1：最推荐，直接用官方上下文（绝不出错）
+          FULL_REPO = "${{ github.repository }}"
           OWNER="${{ github.repository_owner }}"
           REPO="${{ github.repository_name }}"
           TAG="${{ github.ref_name }}"                  # tag 推送时就是 v1.2.3
+          echo "full_repo=$FULL_REPO"
           echo "owner=$OWNER"
           echo "repo=$REPO"
           echo "tag=$TAG"
@@ -34,12 +36,10 @@ jobs:
           # 全转小写（Docker/GHCR 必须小写）
           OWNER_LOWER=$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')
           REPO_LOWER=$(echo "$REPO" | tr '[:upper:]' '[:lower:]')
-
-          echo "owner=$OWNER" >> $GITHUB_OUTPUT
-          echo "owner_lower=$OWNER_LOWER" >> $GITHUB_OUTPUT
-          echo "repo=$REPO" >> $GITHUB_OUTPUT
-          echo "repo_lower=$REPO_LOWER" >> $GITHUB_OUTPUT
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          SHELL_REPO_LOWER=$(echo "$SHELL_REPO" | tr '[:upper:]' '[:lower:]')
+          FULL_REPO_LOWER=$(echo "$FULL_REPO" | tr '[:upper:]' '[:lower:]')
 
           # 安全打印（不会被 mask）
-          echo "Image: $OWNER_LOWER/$REPO_LOWER:$TAG"
+          echo "Image Full: $FULL_REPO_LOWER:$TAG"
+          echo "Image Shell: $OWNER_LOWER/$SHELL_REPO_LOWER:$TAG"
+          echo "Image Repo: $OWNER_LOWER/$REPO_LOWER:$TAG"
