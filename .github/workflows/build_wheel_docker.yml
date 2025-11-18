@@ -43,3 +43,7 @@ jobs:
           echo "Image Full: $FULL_REPO_LOWER:$TAG"
           echo "Image Shell: $OWNER_LOWER/$SHELL_REPO_LOWER:$TAG"
           echo "Image Repo: $OWNER_LOWER/$REPO_LOWER:$TAG"
+      - name: Build and push
+        id: docker
+        run: |
+          echo "Image Shell: $OWNER_LOWER/$SHELL_REPO_LOWER:$TAG"
