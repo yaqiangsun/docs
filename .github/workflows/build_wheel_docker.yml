@@ -22,7 +22,9 @@ jobs:
           # 方法1：最推荐，直接用官方上下文（绝不出错）
           FULL_REPO="${{ github.repository }}"
           OWNER="${{ github.repository_owner }}"
-          REPO="${{ github.repository_name }}"
+          # OWNER=$(echo "$FULL_REPO" | cut -d'/' -f1)
+          # REPO="${{ github.repository_name }}"
+          REPO=$(echo "$FULL_REPO" | cut -d'/' -f2)
           TAG="${{ github.ref_name }}"                  # tag 推送时就是 v1.2.3
           echo "full_repo=$FULL_REPO"
           echo "owner=$OWNER"
