@@ -6,75 +6,48 @@ on:
       - "*"  # 当推送 Git 标签时触发
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
-    # 把要传给下一个 job 的值暴露出去
-    outputs:
-      image: ${{ steps.version.outputs.image }}
-      image_latest: ${{ steps.version.outputs.image_latest }}
 
     steps:
       # 检出代码
       - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # 确保 git tag 能正常解析
-
+        uses: actions/checkout@v2
+      
       # 设置 Docker Buildx
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v2
 
       # 获取仓库名称、Git 标签等信息
       - name: Get repository details
         id: version
         run: |
-          VERSION=${GITHUB_REF#refs/tags/}          # 最准确的 tag 获取方式
-          FULL_REPO_NAME=${GITHUB_REPOSITORY}       # 例如：username/repo_name
+          VERSION=${GITHUB_REF#refs/tags/}     # 最准确的 tag 获取方式
+          FULL_REPO_NAME=${GITHUB_REPOSITORY}  # 例如：username/repo_name
           USER_NAME=$(echo $FULL_REPO_NAME | cut -d'/' -f1)  # 提取 user_name
           REPO_NAME=$(echo $FULL_REPO_NAME | cut -d'/' -f2)  # 提取 repo_name
           REPO_NAME=$(echo $REPO_NAME | tr '[:upper:]' '[:lower:]')  # 转换为小写
-          
-          IMAGE_NAME="${USER_NAME}/${REPO_NAME}:${VERSION}"
-          LATEST_IMAGE_NAME="${USER_NAME}/${REPO_NAME}:latest"
-
           echo "Repository: $REPO_NAME, Version: $VERSION, User: $USER_NAME,FULL_REPO_NAME:$FULL_REPO_NAME"
-          echo "image=$IMAGE_NAME" >> $GITHUB_OUTPUT
-          echo "image_latest=$LATEST_IMAGE_NAME" >> $GITHUB_OUTPUT
 
-      # 构建 Docker 镜像（真正构建 + 打上两个 tag）
+      # 构建 Docker 镜像
       - name: Build Docker image
         run: |
-          echo "Docker image ${{ steps.version.outputs.image }} built successfully."
-
-  push_docker:
-    needs: build  # 依赖于构建步骤完成后执行
-    runs-on: ubuntu-latest
-
-    steps:
-      # 检出代码（push 阶段不需要代码，但 checkout 可以避免浅克隆问题）
-      - name: Checkout code
-        uses: actions/checkout@v4
-
+          IMAGE_NAME="${USER_NAME}/${REPO_NAME}:${VERSION}"
+          LATEST_IMAGE_NAME="${USER_NAME}/${REPO_NAME}:latest"
+          
+          echo "Docker image $IMAGE_NAME built successfully."
+          
       # 登录 Docker Hub
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 获取仓库名称、Git 标签等信息（现在通过 outputs 正确传递）
-      - name: Get repository details
-        run: |
-          echo "Using repository: ${{ needs.build.outputs.image }}"
-          echo "Using latest tag: ${{ needs.build.outputs.image_latest }}"
-
       # 推送 Docker 镜像
       - name: Push Docker image
         run: |
-          IMAGE_NAME="${{ needs.build.outputs.image }}"
-          LATEST_IMAGE_NAME="${{ needs.build.outputs.image_latest }}"
-
-          # docker push $IMAGE_NAME
-          # docker push $LATEST_IMAGE_NAME
+          IMAGE_NAME="${USER_NAME}/${REPO_NAME}:${VERSION}"
+          LATEST_IMAGE_NAME="${USER_NAME}/${REPO_NAME}:latest"
+          
           echo "Docker image $IMAGE_NAME pushed successfully."
-          echo "Latest tag $LATEST_IMAGE_NAME pushed successfully."
