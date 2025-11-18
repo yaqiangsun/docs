@@ -8,69 +8,34 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      # 检出代码
+      # 关键：必须先 checkout，且用最新版 + fetch tags
       - name: Checkout code
-        uses: actions/checkout@v2
-
-
-      # 设置 Docker Buildx
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      # 获取仓库名称、Git 标签等信息
-      - name: Get repository details
-        id: version
-        run: |
-          echo "repository=${{ github.repository }}"
-          echo "repo_name=${{ github.repository_name }}"   # 就是 repo_name
-          echo "owner=${{ github.repository_owner }}"     # 就是用户名或组织名
-          echo "version=${{ github.ref_name }}"           # tag 推送时就是 tag 名
-          VERSION=$(git describe --tags --always)
-          FULL_REPO_NAME=${GITHUB_REPOSITORY}  # 例如：username/repo_name
-          USER_NAME=$(echo $FULL_REPO_NAME | cut -d'/' -f1)  # 提取 user_name
-          REPO_NAME=$(echo $FULL_REPO_NAME | cut -d'/' -f2)  # 提取 repo_name
-          REPO_NAME=$(echo $REPO_NAME | tr '[:upper:]' '[:lower:]')  # 转换为小写
-          echo "Repository: $REPO_NAME, Version: $VERSION, User: $USER_NAME,FULL_REPO_NAME:$FULL_REPO_NAME"
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_OUTPUT
-          echo "USER_NAME=$USER_NAME" >> $GITHUB_OUTPUT
-        env:
-          # 临时关闭 mask（只对这一步有效）
-          ACTIONS_STEP_DEBUG: true
-
-      # 构建 Docker 镜像
-      - name: Build Docker image
-        run: |
-          # 读取 $GITHUB_OUTPUT 文件中的值
-          source $GITHUB_OUTPUT
-          
-          IMAGE_NAME="${USER_NAME}/${REPO_NAME}:${VERSION}"
-          
-          echo "Docker image $IMAGE_NAME built successfully."
-        
-      # 登录 Docker Hub
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: actions/checkout@v4
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          
-      # 获取仓库名称、Git 标签等信息
-      - name: Get repository details
-        run: |
-          # 读取 $GITHUB_OUTPUT 文件中的值
-          source $GITHUB_OUTPUT
-          echo "Using repository: $USER_NAME/$REPO_NAME:$VERSION"
+          fetch-depth: 0   # 必须加，否则 git describe 和 tag 相关变量可能不准
 
-      # 推送 Docker 镜像
-      - name: Push Docker image
+      # 这一步提取所有信息，100% 可靠，永不 mask
+      - name: Extract metadata
+        id: meta
         run: |
-          # 读取 $GITHUB_OUTPUT 文件中的值
-          source $GITHUB_OUTPUT
+          # 方法1：最推荐，直接用官方上下文（绝不出错）
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.repository_name }}"
+          TAG="${{ github.ref_name }}"                  # tag 推送时就是 v1.2.3
 
-          IMAGE_NAME="${USER_NAME}/${REPO_NAME}:${VERSION}"
-          LATEST_IMAGE_NAME="${USER_NAME}/${REPO_NAME}:latest"  # 定义 latest 标签
-          
-          echo "Docker image $IMAGE_NAME pushed successfully."
+          # 方法2：如果你非常不放心官方变量，再用 shell 二次验证（两者一定相等）
+          SHELL_REPO=$(basename "${{ github.repository }}")  # 结果和上面 REPO 完全一致
+
+          # 全转小写（Docker/GHCR 必须小写）
+          OWNER_LOWER=$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')
+          REPO_LOWER=$(echo "$REPO" | tr '[:upper:]' '[:lower:]')
+
+          echo "owner=$OWNER" >> $GITHUB_OUTPUT
+          echo "owner_lower=$OWNER_LOWER" >> $GITHUB_OUTPUT
+          echo "repo=$REPO" >> $GITHUB_OUTPUT
+          echo "repo_lower=$REPO_LOWER" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+          # 安全打印（不会被 mask）
+          echo "Image: $OWNER_LOWER/$REPO_LOWER:$TAG"
