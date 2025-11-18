@@ -36,6 +36,9 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "REPO_NAME=$REPO_NAME" >> $GITHUB_OUTPUT
           echo "USER_NAME=$USER_NAME" >> $GITHUB_OUTPUT
+        env:
+          # 临时关闭 mask（只对这一步有效）
+          ACTIONS_STEP_DEBUG: true
 
       # 构建 Docker 镜像
       - name: Build Docker image
