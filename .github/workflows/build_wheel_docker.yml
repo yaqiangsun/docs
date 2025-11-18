@@ -23,9 +23,13 @@ jobs:
           OWNER="${{ github.repository_owner }}"
           REPO="${{ github.repository_name }}"
           TAG="${{ github.ref_name }}"                  # tag 推送时就是 v1.2.3
+          echo "owner=$OWNER"
+          echo "repo=$REPO"
+          echo "tag=$TAG"
 
           # 方法2：如果你非常不放心官方变量，再用 shell 二次验证（两者一定相等）
           SHELL_REPO=$(basename "${{ github.repository }}")  # 结果和上面 REPO 完全一致
+          echo "shell_repo=$SHELL_REPO"
 
           # 全转小写（Docker/GHCR 必须小写）
           OWNER_LOWER=$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')
