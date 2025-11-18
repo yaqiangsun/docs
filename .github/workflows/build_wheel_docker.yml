@@ -23,6 +23,7 @@ jobs:
       - name: Get repository details
         id: version
         run: |
+          echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
           VERSION=$(git describe --tags --always)
           FULL_REPO_NAME=${GITHUB_REPOSITORY}  # 例如：username/repo_name
           USER_NAME=$(echo $FULL_REPO_NAME | cut -d'/' -f1)  # 提取 user_name
