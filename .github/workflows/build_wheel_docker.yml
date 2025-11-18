@@ -45,7 +45,16 @@ jobs:
           echo "Image Full: $FULL_REPO_LOWER:$TAG"
           echo "Image Shell: $OWNER_LOWER/$SHELL_REPO_LOWER:$TAG"
           echo "Image Repo: $OWNER_LOWER/$REPO_LOWER:$TAG"
+
+          # Set outputs for the following steps
+          echo "full_repo=$FULL_REPO" >> $GITHUB_ENV
+          echo "owner=$OWNER" >> $GITHUB_ENV
+          echo "repo=$REPO" >> $GITHUB_ENV
+          echo "tag=$TAG" >> $GITHUB_ENV
       - name: Build and push
         id: docker
         run: |
+          echo "owner1: ${{steps.meta.outputs.owner}}"
+          echo "owner2: $OWNER"
+          echo "owner3: $owner"
           echo "Image Shell: $OWNER_LOWER/$SHELL_REPO_LOWER:$TAG"
