@@ -20,7 +20,7 @@ jobs:
         id: meta
         run: |
           # 方法1：最推荐，直接用官方上下文（绝不出错）
-          FULL_REPO = "${{ github.repository }}"
+          FULL_REPO="${{ github.repository }}"
           OWNER="${{ github.repository_owner }}"
           REPO="${{ github.repository_name }}"
           TAG="${{ github.ref_name }}"                  # tag 推送时就是 v1.2.3
